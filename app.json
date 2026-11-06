@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Tabela",
+    "slug": "tabela",
+    "owner": "maidannoir",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b0b0b",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.mutlumeydan.tabela",
+      "supportsTablet": true,
+      "infoPlist": { "ITSAppUsesNonExemptEncryption": false, "UIStatusBarStyle": "UIStatusBarStyleLightContent" }
+    },
+    "android": {
+      "package": "com.mutlumeydan.tabela",
+      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0b0b0b" },
+      "permissions": ["VIBRATE", "WRITE_SETTINGS"]
+    },
+    "plugins": [
+      ["expo-splash-screen", { "image": "./assets/splash-icon.png", "imageWidth": 180, "resizeMode": "contain", "backgroundColor": "#0b0b0b" }],
+      "expo-localization",
+      "expo-brightness",
+      ["expo-screen-orientation", { "initialOrientation": "DEFAULT" }]
+    ]
+  }
+}

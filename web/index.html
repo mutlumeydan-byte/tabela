@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Tabela</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000">
+<style>
+  :root { --bg:#000; --fg:#ffe600; }
+  html, body { margin:0; height:100%; background:#0b0b0b; color:#eee; font-family:-apple-system,"SF Pro Display","Segoe UI",Roboto,sans-serif; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; overflow:hidden; }
+  #setup { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; gap:22px; padding:calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom)); box-sizing:border-box; }
+  h1 { margin:0 0 4px; font-size:14px; letter-spacing:.35em; text-transform:uppercase; opacity:.5; text-align:center; }
+  textarea { width:100%; box-sizing:border-box; background:#161616; color:#fff; border:1px solid #2a2a2a; border-radius:18px; padding:18px; font-size:28px; font-weight:700; text-align:center; resize:none; height:130px; outline:none; text-transform:uppercase; }
+  .row { display:flex; justify-content:center; gap:14px; align-items:center; flex-wrap:wrap; }
+  .sw { width:38px; height:38px; border-radius:50%; border:3px solid transparent; cursor:pointer; }
+  .sw.on { border-color:#fff; transform:scale(1.15); }
+  .pick { display:flex; align-items:center; gap:8px; font-size:12px; letter-spacing:.2em; opacity:.8; }
+  .pick input { width:34px; height:34px; border:1px solid #333; border-radius:50%; padding:0; background:none; }
+  .pick input::-webkit-color-swatch-wrapper { padding:0; } .pick input::-webkit-color-swatch { border:0; border-radius:50%; }
+  .opt { display:flex; gap:10px; justify-content:center; }
+  .opt button { background:#161616; color:#ddd; border:1px solid #2a2a2a; border-radius:999px; padding:10px 16px; font-size:14px; letter-spacing:.1em; }
+  .opt button.on { background:#fff; color:#000; border-color:#fff; }
+  #go { margin-top:8px; background:var(--fg); color:#000; border:0; border-radius:999px; padding:18px; font-size:18px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; }
+  #show { position:absolute; inset:0; display:none; background:var(--bg); color:var(--fg); align-items:center; justify-content:center; overflow:hidden; cursor:pointer; }
+  #show.on { display:flex; }
+  #txt { font-weight:900; white-space:nowrap; line-height:1; letter-spacing:.02em; text-transform:uppercase; will-change:transform; }
+  #txt.wrap { white-space:normal; text-align:center; padding:0 4vw; }
+  .rot #txt { transform:rotate(90deg); }
+  @keyframes scroll { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+  @keyframes blink { 0%,49% { opacity:1 } 50%,100% { opacity:0 } }
+  .scroll #txt { animation: scroll var(--dur,8s) linear infinite; }
+  .blink #txt { animation: blink 1s steps(1) infinite; }
+  #lang { position:absolute; top:calc(14px + env(safe-area-inset-top)); right:18px; z-index:3; background:none; border:1px solid #333; color:#aaa; font:12px/1 inherit; letter-spacing:.15em; padding:7px 10px; border-radius:999px; }
+  #hint { position:absolute; bottom:calc(14px + env(safe-area-inset-bottom)); width:100%; text-align:center; font-size:12px; letter-spacing:.3em; opacity:.35; color:var(--fg); }
+</style>
+</head>
+<body>
+  <button id="lang">TR</button>
+  <div id="setup">
+    <h1>Tabela</h1>
+    <textarea id="in" maxlength="60" placeholder="NE YAZSIN?"></textarea>
+    <div class="row" id="colors"></div>
+    <div class="row" id="custom">
+      <label class="pick"><input type="color" id="bgPick" value="#000000"><span id="bgLbl">ZEMİN</span></label>
+      <label class="pick"><input type="color" id="fgPick" value="#ffe600"><span id="fgLbl">YAZI</span></label>
+    </div>
+    <div class="opt">
+      <button data-mode="static" class="on">SABİT</button>
+      <button data-mode="scroll">KAYAN</button>
+      <button data-mode="blink">YANIP SÖNEN</button>
+    </div>
+    <div class="opt">
+      <button id="rot">YATAY ÇEVİR</button>
+    </div>
+    <button id="go">GÖSTER</button>
+  </div>
+  <div id="show"><div id="txt"></div><div id="hint">KAPATMAK İÇİN DOKUN</div></div>
+
+<script>
+(function(){
+  // placeholder, static, scroll, blink, rotate, show, hint
+  var L = {
+    tr:['NE YAZSIN?','SABİT','KAYAN','YANIP SÖNEN','YATAY ÇEVİR','GÖSTER','KAPATMAK İÇİN DOKUN','ZEMİN','YAZI'],
+    en:['WHAT SHOULD IT SAY?','STATIC','SCROLL','BLINK','ROTATE','SHOW','TAP TO CLOSE','BACK','TEXT'],
+    es:['¿QUÉ DEBE DECIR?','FIJO','DESPLAZAR','PARPADEO','GIRAR','MOSTRAR','TOCA PARA CERRAR','FONDO','TEXTO'],
+    de:['WAS SOLL DRAUFSTEHEN?','FEST','LAUFEND','BLINKEND','DREHEN','ZEIGEN','TIPPEN ZUM SCHLIESSEN','HINTERGRUND','TEXT'],
+    fr:['QUOI ÉCRIRE ?','FIXE','DÉFILANT','CLIGNOTANT','PIVOTER','AFFICHER','TOUCHER POUR FERMER','FOND','TEXTE'],
+    it:['COSA SCRIVERE?','FISSO','SCORREVOLE','LAMPEGGIANTE','RUOTA','MOSTRA','TOCCA PER CHIUDERE','SFONDO','TESTO'],
+    pt:['O QUE ESCREVER?','FIXO','ROLANDO','PISCANDO','GIRAR','MOSTRAR','TOQUE PARA FECHAR','FUNDO','TEXTO'],
+    ru:['ЧТО НАПИСАТЬ?','СТАТИЧНО','БЕГУЩАЯ','МИГАНИЕ','ПОВЕРНУТЬ','ПОКАЗАТЬ','НАЖМИТЕ, ЧТОБЫ ЗАКРЫТЬ','ФОН','ТЕКСТ'],
+    ar:['ماذا نكتب؟','ثابت','متحرك','وامض','تدوير','عرض','المس للإغلاق','الخلفية','النص'],
+    hi:['क्या लिखें?','स्थिर','स्क्रॉल','ब्लिंक','घुमाएँ','दिखाएँ','बंद करने के लिए छुएँ','पृष्ठभूमि','टेक्स्ट'],
+    id:['TULIS APA?','DIAM','BERGULIR','BERKEDIP','PUTAR','TAMPILKAN','SENTUH UNTUK TUTUP','LATAR','TEKS'],
+    ja:['何を表示する？','固定','スクロール','点滅','回転','表示','タップで閉じる','背景','文字'],
+    ko:['무엇을 쓸까요?','고정','스크롤','깜빡임','회전','표시','닫으려면 터치','배경','글자'],
+    zh:['写什么？','静止','滚动','闪烁','旋转','显示','点击关闭','背景','文字']
+  };
+  var LANGS=Object.keys(L), lang='en', langBtn=document.getElementById('lang');
+  function applyLang(){
+    var t=L[lang]; document.documentElement.lang=lang; document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
+    langBtn.textContent=lang.toUpperCase();
+    document.getElementById('in').placeholder=t[0];
+    var m=document.querySelectorAll('[data-mode]'); m[0].textContent=t[1]; m[1].textContent=t[2]; m[2].textContent=t[3];
+    document.getElementById('rot').textContent=t[4]; document.getElementById('go').textContent=t[5]; document.getElementById('hint').textContent=t[6]; document.getElementById('bgLbl').textContent=t[7]; document.getElementById('fgLbl').textContent=t[8];
+    try{ localStorage.setItem('tabela-lang',lang); }catch(e){}
+  }
+  try{ var sl=localStorage.getItem('tabela-lang'); lang = (sl&&L[sl])?sl:((navigator.language||'en').slice(0,2).toLowerCase()); if(!L[lang]) lang='en'; }catch(e){ lang='en'; }
+  langBtn.onclick=function(){ lang=LANGS[(LANGS.indexOf(lang)+1)%LANGS.length]; applyLang(); };
+  applyLang();
+  var PAL = [['#000','#ffe600'],['#000','#ffffff'],['#000','#ff3b30'],['#000','#34c759'],['#000','#5ac8fa'],['#ffffff','#000000'],['#ff3b30','#ffffff'],['#1e40ff','#ffffff']];
+  var inp=document.getElementById('in'), colors=document.getElementById('colors'), show=document.getElementById('show'), txt=document.getElementById('txt');
+  var mode='static', color=0, rot=false;
+  var bgPick=document.getElementById('bgPick'), fgPick=document.getElementById('fgPick');
+  function syncPick(){ bgPick.value=PAL[color][0].length===4?PAL[color][0]+PAL[color][0].slice(1):PAL[color][0]; fgPick.value=PAL[color][1]; }
+  bgPick.oninput=fgPick.oninput=function(){ color=-1; [].forEach.call(colors.children,function(c){c.classList.remove('on')}); };
+  PAL.forEach(function(p,i){ var b=document.createElement('div'); b.className='sw'+(i===0?' on':''); b.style.background='linear-gradient(135deg,'+p[0]+' 50%,'+p[1]+' 50%)'; b.onclick=function(){ color=i; [].forEach.call(colors.children,function(c,k){c.classList.toggle('on',k===i)}); syncPick(); }; colors.appendChild(b); });
+  document.querySelectorAll('[data-mode]').forEach(function(b){ b.onclick=function(){ mode=b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(function(x){x.classList.toggle('on',x===b)}); }; });
+  document.getElementById('rot').onclick=function(){ rot=!rot; this.classList.toggle('on',rot); };
+  try { var s=JSON.parse(localStorage.getItem('tabela')||'{}'); if(s.t) inp.value=s.t; if(s.bg){ bgPick.value=s.bg; fgPick.value=s.fg; color=(typeof s.c==='number')?s.c:-1; [].forEach.call(colors.children,function(c,k){c.classList.toggle('on',k===color)}); } } catch(e){}
+
+  function fit(){
+    var W=window.innerWidth, H=window.innerHeight; if(rot){ var t=W; W=H; H=t; }
+    txt.classList.toggle('wrap', mode!=='scroll');
+    var size = mode==='scroll' ? H*0.8 : H*0.8; txt.style.fontSize=size+'px';
+    if(mode!=='scroll'){ var lo=10, hi=size; while(hi-lo>2){ var mid=(lo+hi)/2; txt.style.fontSize=mid+'px'; if(txt.scrollWidth<=W*0.96 && txt.scrollHeight<=H*0.9) lo=mid; else hi=mid; } txt.style.fontSize=lo+'px'; }
+    else { show.style.setProperty('--dur', Math.max(4, txt.scrollWidth/180)+'s'); }
+  }
+  document.getElementById('go').onclick=function(){
+    var t=(inp.value||'').trim(); if(!t) return;
+    try{ localStorage.setItem('tabela', JSON.stringify({t:t})); }catch(e){}
+    txt.textContent=t; var bg = color>=0?PAL[color][0]:bgPick.value, fg = color>=0?PAL[color][1]:fgPick.value;
+    document.documentElement.style.setProperty('--bg',bg); document.documentElement.style.setProperty('--fg',fg);
+    try{ localStorage.setItem('tabela', JSON.stringify({t:t,bg:bg,fg:fg,c:color})); }catch(e){}
+    show.className='on '+mode+(rot?' rot':''); show.classList.add('on');
+    fit(); try{ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }catch(e){}
+  };
+  show.onclick=function(){ show.className=''; try{ document.exitFullscreen && document.exitFullscreen(); }catch(e){} };
+  window.addEventListener('resize', function(){ if(show.classList.contains('on')) fit(); });
+})();
+</script>
+</body>
+</html>

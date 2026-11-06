@@ -1,0 +1,21 @@
+name: Upload App Store screenshots (all languages)
+on:
+  workflow_dispatch:
+    inputs:
+      app_id:
+        description: "App Store Connect Apple ID of the app (numbers)"
+        required: true
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+      ASC_APP_ID: ${{ inputs.app_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/upload-screenshots.mjs

@@ -1,4 +1,4 @@
-# Yapılacaklar (Tabela + Nefes)
+# Yapılacaklar (Tabela + Nefes + Piti Piti)
 
 Son güncelleme: 6 Kasım 2026
 
@@ -17,6 +17,12 @@ Son güncelleme: 6 Kasım 2026
 - [ ] Android / Google Play.
 - [ ] GitHub'daki ASC_PRIVATE_KEY secret'ını AuthKey_74T2T6F3L2.p8 ile güncelle (eskisi Apple tarafından reddediliyor).
 - [ ] Mağaza metinlerini ve görselleri 14 dile çıkar (Tabela'daki gibi; `scripts/upload-*.mjs` iş akışları kopyalanabilir).
+
+## Piti Piti 1.0
+- [ ] `eas build --auto-submit` (kullanıcı, PowerShell) → App Store'da uygulama kaydı oluşur.
+- [ ] Actions → metin + görsel yükle (folder = `piti`, app_id = yeni ID).
+- [ ] Fiyat $0.99, yaş sınırı, gizlilik "veri toplanmıyor", Submit for Review.
+- [ ] Android / Google Play.
 
 ## Nasıl güncellenir (her iki uygulama)
 PowerShell, proje klasöründe:

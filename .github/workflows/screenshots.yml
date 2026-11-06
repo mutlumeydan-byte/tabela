@@ -6,7 +6,7 @@ on:
         description: "App Store Connect Apple ID of the app (numbers)"
         required: true
       folder:
-        description: "App folder in this repo: . = Tabela, piti = Piti Piti"
+        description: "App folder in this repo: . = Tabela, piti = Piti Piti, tesbih = Tesbih"
         required: true
         default: "."
 

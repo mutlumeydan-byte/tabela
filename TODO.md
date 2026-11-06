@@ -24,6 +24,16 @@ Son güncelleme: 6 Kasım 2026
 - [ ] Fiyat $0.99, yaş sınırı, gizlilik "veri toplanmıyor", Submit for Review.
 - [ ] Android / Google Play.
 
+## Tesbih 1.0
+- [ ] `eas build --auto-submit` (kullanıcı) → App Store kaydı.
+- [ ] Actions → metin + görsel (folder = `tesbih`), fiyat/gizlilik/yaş/içerik hakları, Submit.
+- [ ] İleride: ses tuşlarıyla sayma (native modül gerekir), Apple Watch.
+
+## Fikir havuzu
+- **Park / AVM otopark bulucu (Mutlu'nun fikri):** kolondaki QR → "Mavi asansör, B2, C14, çıkınca sağa" kartı + eşe gönder. Uygulama değil B2B (AVM). Önce QR + web sayfası demosu.
+- Sessiz Sınıf (gürültü lambası) — pazar küçük, ücretsiz web rakipleri var.
+- Skor tabelası, Kaç Gün? (widget), Çivi (tablo asma).
+
 ## Nasıl güncellenir (her iki uygulama)
 PowerShell, proje klasöründe:
 ```

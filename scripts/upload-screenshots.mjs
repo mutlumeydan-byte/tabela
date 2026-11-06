@@ -57,7 +57,7 @@ for (const [lang, ascLocales] of Object.entries(LOCALES)) {
     }
     const sets = (await api('GET', `/appStoreVersionLocalizations/${loc.id}/appScreenshotSets`)).data;
     for (const [tag, displayType] of Object.entries(DEVICES)) {
-      const files = [1, 2, 3, 4].map(i => `${lang}-${tag}-${i}.jpg`).filter(f => fs.existsSync(path.join(DIR, f)));
+      const files = [1, 2, 3, 4, 5].map(i => `${lang}-${tag}-${i}.jpg`).filter(f => fs.existsSync(path.join(DIR, f)));
       try {
         let set = sets.find(s => s.attributes.screenshotDisplayType === displayType);
         if (!set) set = (await api('POST', '/appScreenshotSets', { data: { type: 'appScreenshotSets', attributes: { screenshotDisplayType: displayType }, relationships: { appStoreVersionLocalization: { data: { type: 'appStoreVersionLocalizations', id: loc.id } } } } })).data;

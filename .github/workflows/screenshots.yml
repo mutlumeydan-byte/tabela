@@ -5,6 +5,10 @@ on:
       app_id:
         description: "App Store Connect Apple ID of the app (numbers)"
         required: true
+      folder:
+        description: "App folder in this repo: . = Tabela, piti = Piti Piti"
+        required: true
+        default: "."
 
 jobs:
   upload:
@@ -18,4 +22,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: node scripts/upload-screenshots.mjs
+      - working-directory: ${{ inputs.folder }}
+        run: node $GITHUB_WORKSPACE/scripts/upload-screenshots.mjs

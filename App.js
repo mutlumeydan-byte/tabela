@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  View, Text, TextInput, Pressable, Animated, Easing, StyleSheet, useWindowDimensions, ScrollView, Platform, KeyboardAvoidingView, I18nManager,
+  View, Text, TextInput, Pressable, Animated, Easing, StyleSheet, useWindowDimensions, ScrollView, Platform, KeyboardAvoidingView, Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Localization from 'expo-localization';
@@ -17,6 +17,17 @@ const PAL = [
   ['#000000', '#ff2d95'], ['#000000', '#ff9500'], ['#7c3aed', '#ffffff'], ['#ffe600', '#000000'],
 ];
 
+// Full color grid for the custom picker: grays + 12 hues x 5 shades
+function hsl(h, s, l) {
+  s /= 100; l /= 100; const k = n => (n + h / 30) % 12; const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return '#' + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
+}
+const GRID = [
+  ['#000000', '#1c1c1e', '#3a3a3c', '#636366', '#8e8e93', '#aeaeb2', '#d1d1d6', '#e5e5ea', '#f2f2f7', '#ffffff', '#ffe600', '#ff2d95'],
+  ...[88, 72, 55, 40, 25].map(l => Array.from({ length: 12 }, (_, i) => hsl(i * 30, 100, l))),
+];
+
 function deviceLang() {
   try { const c = (Localization.getLocales()[0]?.languageCode || 'en').toLowerCase(); return L[c] ? c : 'en'; } catch { return 'en'; }
 }
@@ -25,7 +36,9 @@ export default function App() {
   const { width, height } = useWindowDimensions();
   const [lang, setLang] = useState('en');
   const [text, setText] = useState('');
-  const [color, setColor] = useState(0);
+  const [color, setColor] = useState(0);          // index into PAL, or -1 = custom
+  const [custom, setCustom] = useState(['#000000', '#ffe600']);
+  const [picking, setPicking] = useState(null);     // null | 0 (background) | 1 (text)
   const [mode, setMode] = useState('static');   // static | scroll | blink
   const [rot, setRot] = useState(false);
   const [showing, setShowing] = useState(false);
@@ -35,7 +48,12 @@ export default function App() {
   const anim = useRef(new Animated.Value(0)).current;
   const loop = useRef(null);
   const t = (i) => L[lang][i];
-  const [bg, fg] = PAL[color];
+  const [bg, fg] = color >= 0 ? PAL[color] : custom;
+  const pick = (c) => {
+    const next = [...(color >= 0 ? PAL[color] : custom)]; next[picking] = c;
+    setCustom(next); setColor(-1); setPicking(null); save({ color: -1, custom: next });
+    try { Haptics.selectionAsync(); } catch {}
+  };
 
   useEffect(() => {
     (async () => {
@@ -43,7 +61,8 @@ export default function App() {
         const s = JSON.parse((await AsyncStorage.getItem('tabela')) || '{}');
         setLang(s.lang && L[s.lang] ? s.lang : deviceLang());
         if (s.text) setText(s.text);
-        if (typeof s.color === 'number' && s.color < PAL.length) setColor(s.color);
+        if (Array.isArray(s.custom) && s.custom.length === 2) setCustom(s.custom);
+        if (typeof s.color === 'number' && s.color >= -1 && s.color < PAL.length) setColor(s.color);
         if (s.mode) setMode(s.mode);
       } catch { setLang(deviceLang()); }
     })();
@@ -59,7 +78,7 @@ export default function App() {
   const begin = async () => {
     const v = text.trim(); if (!v) return;
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-    save({ text: v, color, mode, lang });
+    save({ text: v, color, custom, mode, lang });
     setShowing(true);
     try { KeepAwake.activateKeepAwakeAsync(); } catch {}
     try {
@@ -148,6 +167,14 @@ export default function App() {
           ))}
         </View>
         <View style={styles.opt}>
+          {[0, 1].map(k => (
+            <Pressable key={k} onPress={() => setPicking(k)} style={[styles.btn, styles.pickBtn, color === -1 && styles.pickOn]}>
+              <View style={[styles.pickDot, { backgroundColor: k === 0 ? bg : fg }]} />
+              <Text style={styles.btnText}>{t(k === 0 ? 7 : 8)}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <View style={styles.opt}>
           {[['static', 1], ['scroll', 2], ['blink', 3]].map(([m, i]) => (
             <Pressable key={m} onPress={() => setMode(m)} style={[styles.btn, mode === m && styles.btnOn]}>
               <Text style={[styles.btnText, mode === m && styles.btnTextOn]}>{t(i)}</Text>
@@ -166,6 +193,24 @@ export default function App() {
           </View>
         </View>
       </ScrollView>
+      <Modal visible={picking !== null} transparent animationType="fade" onRequestClose={() => setPicking(null)}>
+        <Pressable style={styles.modalBg} onPress={() => setPicking(null)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>{picking !== null ? t(picking === 0 ? 7 : 8) : ''}</Text>
+            {GRID.map((row, r) => (
+              <View key={r} style={styles.gridRow}>
+                {row.map(c => {
+                  const cur = picking === 0 ? bg : fg;
+                  return <Pressable key={c + r} onPress={() => pick(c)} style={[styles.cell, { backgroundColor: c }, cur.toLowerCase() === c && styles.cellOn]} />;
+                })}
+              </View>
+            ))}
+            <View style={[styles.previewBox, { backgroundColor: bg, marginTop: 14 }]}>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.previewText, { color: fg }]}>{text.trim() || 'ABC'}</Text>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -189,6 +234,15 @@ const styles = StyleSheet.create({
   preview: { alignItems: 'center', marginTop: 4 },
   previewBox: { width: '100%', height: 70, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2a2a2a', paddingHorizontal: 12 },
   previewText: { fontSize: 32, fontWeight: '900', letterSpacing: 1 },
+  pickBtn: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pickOn: { borderColor: '#fff' },
+  pickDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: '#555' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center', padding: 16 },
+  modalCard: { backgroundColor: '#161616', borderRadius: 22, padding: 16, width: '100%', maxWidth: 440, borderWidth: 1, borderColor: '#2a2a2a' },
+  modalTitle: { color: '#aaa', fontSize: 12, letterSpacing: 3, textAlign: 'center', marginBottom: 12, fontWeight: '700' },
+  gridRow: { flexDirection: 'row' },
+  cell: { flex: 1, aspectRatio: 1, margin: 1.5, borderRadius: 6 },
+  cellOn: { borderWidth: 3, borderColor: '#fff' },
   lang: { position: 'absolute', top: 54, right: 18, zIndex: 2, borderWidth: 1, borderColor: '#333', borderRadius: 999, paddingVertical: 7, paddingHorizontal: 10 },
   langText: { color: '#aaa', fontSize: 12, letterSpacing: 2 },
   show: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
